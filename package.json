@@ -1,0 +1,207 @@
+{
+  "name": "devmind",
+  "displayName": "DevMind - AI Pair Programmer",
+  "description": "Your AI pair programmer that thinks in context, not just code. Powered by Qwen 3 LLM.",
+  "version": "1.0.0",
+  "publisher": "devmind",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/devmind-ai/devmind.git"
+  },
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Snippets",
+    "Debuggers"
+  ],
+  "keywords": [
+    "ai",
+    "assistant",
+    "context-aware",
+    "qwen",
+    "llm",
+    "pair-programming"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "devmind.activateAgent",
+        "title": "Activate DevMind Agent",
+        "category": "DevMind"
+      },
+      {
+        "command": "devmind.architect",
+        "title": "Architect - Design & Architecture",
+        "category": "DevMind"
+      },
+      {
+        "command": "devmind.codesmith",
+        "title": "CodeSmith - Generate Code",
+        "category": "DevMind"
+      },
+      {
+        "command": "devmind.bughunter",
+        "title": "BugHunter - Debug & Fix",
+        "category": "DevMind"
+      },
+      {
+        "command": "devmind.docguru",
+        "title": "DocGuru - Generate Documentation",
+        "category": "DevMind"
+      },
+      {
+        "command": "devmind.gitmate",
+        "title": "GitMate - Git Operations",
+        "category": "DevMind"
+      },
+      {
+        "command": "devmind.devflow",
+        "title": "DevFlow - Setup Workflows",
+        "category": "DevMind"
+      },
+      {
+        "command": "devmind.codeReview",
+        "title": "Code Quality Review",
+        "category": "DevMind"
+      },
+      {
+        "command": "devmind.refactor",
+        "title": "AI Refactoring",
+        "category": "DevMind"
+      },
+      {
+        "command": "devmind.projectSummary",
+        "title": "Generate Project Summary",
+        "category": "DevMind"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "devmind.activateAgent",
+          "group": "devmind",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "devmind.codeReview",
+          "group": "devmind",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "devmind.refactor",
+          "group": "devmind",
+          "when": "editorHasSelection"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "devmind.projectSummary",
+          "group": "devmind"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "DevMind",
+      "properties": {
+        "devmind.qwenApiUrl": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "Qwen 3 LLM API endpoint URL"
+        },
+        "devmind.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for Qwen 3 LLM (if required)"
+        },
+        "devmind.privacyMode": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable privacy-first mode (no data leaves environment)"
+        },
+        "devmind.contextDepth": {
+          "type": "number",
+          "default": 3,
+          "description": "Context analysis depth (1-5)"
+        },
+        "devmind.agentTone": {
+          "type": "string",
+          "enum": [
+            "mentor",
+            "assistant",
+            "critic"
+          ],
+          "default": "mentor",
+          "description": "AI agent communication tone"
+        },
+        "devmind.enableTelemetry": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable usage telemetry (anonymous)"
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "devmind",
+          "title": "DevMind",
+          "icon": "$(brain)"
+        }
+      ]
+    },
+    "views": {
+      "devmind": [
+        {
+          "icon": "$(comment-discussion)",
+          "id": "devmind.chat",
+          "name": "DevMind Chat",
+          "when": "true"
+        },
+        {
+          "icon": "$(symbol-structure)",
+          "id": "devmind.context",
+          "name": "Context Analysis",
+          "when": "true"
+        },
+        {
+          "icon": "$(history)",
+          "id": "devmind.history",
+          "name": "Audit Trail",
+          "when": "true"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "clean": "rimraf out",
+    "vscode:prepublish": "npm run clean && npm run compile",
+    "compile": "tsc -p ./ --incremental false",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/node": "16.x",
+    "@types/vscode": "^1.74.0",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "eslint": "^8.28.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "glob": "^8.1.0",
+    "ignore": "^5.2.4",
+    "simple-git": "^3.19.0",
+    "yaml": "^2.3.4"
+  }
+}

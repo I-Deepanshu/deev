@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Background -->
+  <rect x="0" y="0" width="128" height="128" rx="16" fill="#4B6EAF" />
+  
+  <!-- Brain outline -->
+  <ellipse cx="64" cy="64" rx="50" ry="50" fill="none" stroke="#FFFFFF" stroke-width="4" />
+  
+  <!-- Brain connections -->
+  <path d="M40,40 C50,30 78,30 88,40 C98,50 98,78 88,88 C78,98 50,98 40,88 C30,78 30,50 40,40 Z" fill="none" stroke="#FFFFFF" stroke-width="3" />
+  <path d="M64,30 L64,98" fill="none" stroke="#FFFFFF" stroke-width="3" />
+  <path d="M30,64 L98,64" fill="none" stroke="#FFFFFF" stroke-width="3" />
+  
+  <!-- Brain nodes -->
+  <circle cx="64" cy="64" r="10" fill="#FFFFFF" />
+  <circle cx="40" cy="40" r="8" fill="#FFFFFF" />
+  <circle cx="88" cy="40" r="8" fill="#FFFFFF" />
+  <circle cx="40" cy="88" r="8" fill="#FFFFFF" />
+  <circle cx="88" cy="88" r="8" fill="#FFFFFF" />
+  <circle cx="64" cy="30" r="6" fill="#FFFFFF" />
+  <circle cx="64" cy="98" r="6" fill="#FFFFFF" />
+  <circle cx="30" cy="64" r="6" fill="#FFFFFF" />
+  <circle cx="98" cy="64" r="6" fill="#FFFFFF" />
+  
+  <!-- Code symbol -->
+  <path d="M54,58 L46,64 L54,70" fill="none" stroke="#2D4A7E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M74,58 L82,64 L74,70" fill="none" stroke="#2D4A7E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M64,52 L64,76" fill="none" stroke="#2D4A7E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Text -->
+  <text x="64" y="115" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#FFFFFF">DevMind</text>
+</svg>

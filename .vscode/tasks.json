@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "command": "node ${workspaceFolder}/node_modules/typescript/bin/tsc -watch -p ./ --incremental false",
+            "group": "build",
+            "isBackground": true,
+            "problemMatcher": [
+                "$tsc-watch"
+            ],
+            "label": "npm: watch",
+            "detail": "tsc -watch -p ./"
+        },
+        {
+            "type": "npm",
+            "script": "compile",
+            "group": "build",
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "label": "npm: compile",
+            "detail": "tsc -p ./ --incremental false"
+        }
+    ]
+}
