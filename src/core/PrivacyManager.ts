@@ -6,14 +6,14 @@ import { ContextData } from "./ContextAnalyzer";
  */
 export enum PrivacyMode {
   /**
-   * Standard mode - allows processing of all data
+   * Permissive mode - allows processing of all data
    */
-  STANDARD = "standard",
+  PERMISSIVE = "permissive",
 
   /**
-   * Enhanced mode - restricts processing of sensitive data
+   * Strict mode - restricts processing of sensitive data
    */
-  ENHANCED = "enhanced",
+  STRICT = "strict",
 
   /**
    * Maximum mode - highly restrictive, minimal data processing
@@ -35,7 +35,7 @@ export class PrivacyManager {
    * Creates a new PrivacyManager instance
    * @param initialMode The initial privacy mode
    */
-  constructor(initialMode: PrivacyMode = PrivacyMode.STANDARD) {
+  constructor(initialMode: PrivacyMode = PrivacyMode.PERMISSIVE) {
     this.mode = initialMode;
     this.initializeSensitivePatterns();
     this.loadExcludedPaths();
@@ -48,7 +48,7 @@ export class PrivacyManager {
    */
   canProcessRequest(request: any): boolean {
     // In standard mode, allow all requests
-    if (this.mode === PrivacyMode.STANDARD) {
+    if (this.mode === PrivacyMode.PERMISSIVE) {
       return true;
     }
 
@@ -77,7 +77,7 @@ export class PrivacyManager {
    */
   canProcessContext(context: ContextData): boolean {
     // In standard mode, allow all contexts
-    if (this.mode === PrivacyMode.STANDARD) {
+    if (this.mode === PrivacyMode.PERMISSIVE) {
       return true;
     }
 

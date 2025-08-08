@@ -256,8 +256,8 @@ export class DevMindManager {
   async onConfigurationChange(): Promise<void> {
     const config = vscode.workspace.getConfiguration("devmind");
     const privacyMode = config.get("privacyMode", true)
-      ? PrivacyMode.ENHANCED
-      : PrivacyMode.STANDARD;
+      ? PrivacyMode.STRICT
+      : PrivacyMode.PERMISSIVE;
     this.privacyManager.setPrivacyMode(privacyMode);
 
     // Reinitialize LLM provider if needed

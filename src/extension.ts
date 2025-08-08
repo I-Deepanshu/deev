@@ -19,8 +19,8 @@ export function activate(context: vscode.ExtensionContext) {
   const config = vscode.workspace.getConfiguration("devmind");
   const privacyModeConfig = config.get<boolean>("privacyMode", true);
   const privacyMode = privacyModeConfig
-    ? PrivacyMode.ENHANCED
-    : PrivacyMode.STANDARD;
+            ? PrivacyMode.STRICT
+            : PrivacyMode.PERMISSIVE;
   const privacyManager = new PrivacyManager(privacyMode);
   const auditTrail = new AuditTrail(context.globalStorageUri);
   const llmProvider = new QwenLLMProvider(
@@ -111,6 +111,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand("devmind.projectSummary", async () => {
       await devMindManager.generateProjectSummary();
+    }),
+
+    // Register command for privacy mode changes
+    vscode.commands.registerCommand("devmind.privacyModeChanged", async (mode: 'strict' | 'permissive') => {
+        privacyManager.setPrivacyMode(mode === 'strict' ? PrivacyMode.STRICT : PrivacyMode.PERMISSIVE);
     }),
   ];
 
