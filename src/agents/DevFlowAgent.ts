@@ -1,12 +1,15 @@
 import * as vscode from 'vscode';
 import { QwenLLMProvider } from '../llm/QwenLLMProvider';
 import { ContextData } from '../core/ContextAnalyzer';
-import { AgentResult, AgentCapability, AgentCapabilityType, CodeChange, AnalysisResult, Alternative } from './types';
+import { AgentResult, AgentCapability, AgentCapabilityType, CodeChange, AnalysisResult, Alternative, IAgent, AgentType } from './types';
 
-export class DevFlowAgent {
+export class DevFlowAgent implements IAgent {
+    readonly type: AgentType = 'devflow';
+    readonly name: string = 'DevFlow';
+    readonly description: string = 'Automates development workflows and generates scripts.';
     constructor(private llmProvider: QwenLLMProvider) {}
 
-    public getCapabilities(): AgentCapability[] {
+    getCapabilities(): AgentCapability[] {
         return [
             {
                 type: 'workflow_setup',
@@ -38,10 +41,10 @@ export class DevFlowAgent {
         ];
     }
 
-    public async automateWorkflow(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async automateWorkflow(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         try {
             const prompt = this.createWorkflowAutomationPrompt(context);
-            const llmResponse = await this.llmProvider.generateCode(prompt, context, 'yaml');
+            const llmResponse = await this.llmProvider.sendRequest(prompt, stream);
 
             if (llmResponse.success && llmResponse.content) {
                 return {
@@ -68,10 +71,10 @@ export class DevFlowAgent {
         }
     }
 
-    public async generateScript(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async generateScript(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         try {
             const prompt = this.createScriptGenerationPrompt(context);
-            const llmResponse = await this.llmProvider.generateCode(prompt, context, 'bash');
+            const llmResponse = await this.llmProvider.sendRequest(prompt, stream);
 
             if (llmResponse.success && llmResponse.content) {
                 return {
@@ -144,5 +147,20 @@ ${context.surroundingCode}
         prompt += `
 Provide the script.`;
         return prompt;
+    }
+
+    async execute(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
+        if (context.command === 'devflow.automate') {
+            return this.automateWorkflow(context, cancellationToken, stream);
+        } else if (context.command === 'devflow.script') {
+            return this.generateScript(context, cancellationToken, stream);
+        } else {
+            return {
+                success: false,
+                agentType: this.type,
+                executionTime: 0,
+                error: 'Unsupported command for DevFlowAgent'
+            };
+        }
     }
 }

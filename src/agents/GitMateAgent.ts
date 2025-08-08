@@ -3,7 +3,7 @@ import { ContextData } from '../core/ContextAnalyzer';
 import * as vscode from 'vscode';
 import { QwenLLMProvider } from '../llm/QwenLLMProvider';
 
-class GitMateAgent implements IAgent {
+export class GitMateAgent implements IAgent {
     readonly type: AgentType = 'gitmate';
     readonly name: string = 'GitMate Agent';
     readonly description: string = 'Assists with Git operations like commit message generation and branch management.';

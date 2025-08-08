@@ -3,8 +3,6 @@ import { PrivacyManager } from '../core/PrivacyManager';
 import { ContextData } from '../core/ContextAnalyzer';
 import { AgentType } from '../agents/types';
 import * as vscode from 'vscode';
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
-
 export interface LLMRequest {
     prompt: string;
     context?: ContextData; // Make context optional as it might not always be needed for simple requests
@@ -103,11 +101,40 @@ export class QwenLLMProvider {
             const payload = this.prepareQwenPayload(request);
             
             // Make the API call
-            const response = await this.makeRequest(payload, stream);
+            const response = await this.makeRequest(payload, !!stream);
             
             const responseTime = Date.now() - startTime;
             
-            return this.parseQwenResponse(response, responseTime, stream);
+            if (stream) {
+                // For streaming, the content is already written to the stream
+                return {
+                    success: true,
+                    completion: 'Streaming response handled by ChatResponseStream',
+                    metadata: {
+                        model: this.config.model,
+                        responseTime: responseTime
+                    }
+                };
+            } else {
+                const axiosResponse = response as AxiosResponse;
+                const completion = axiosResponse.data.choices[0].message.content;
+                const usage = axiosResponse.data.usage;
+
+                return {
+                    success: true,
+                    content: completion,
+                    completion: completion,
+                    usage: {
+                        promptTokens: usage.prompt_tokens,
+                        completionTokens: usage.completion_tokens,
+                        totalTokens: usage.total_tokens
+                    },
+                    metadata: {
+                        model: this.config.model,
+                        responseTime: responseTime
+                    }
+                };
+            }
             
         } catch (error) {
             console.error('Qwen LLM request failed:', error);
@@ -116,91 +143,6 @@ export class QwenLLMProvider {
                 error: this.getErrorMessage(error)
             };
         }
-    }
-
-    // Helper methods for building prompts and parsing responses would go here
-    // For now, we'll keep it simple for streaming.
-
-    private async makeRequest(payload: any, stream?: vscode.ChatResponseStream): Promise<AxiosResponse> {
-        if (stream) {
-            // Handle streaming response
-            return new Promise((resolve, reject) => {
-                this.client.post('/generate', payload, { responseType: 'stream' })
-                    .then(response => {
-                        let completionContent = '';
-                        response.data.on('data', (chunk: Buffer) => {
-                            const text = chunk.toString();
-                            // Assuming the LLM sends plain text or simple JSON chunks
-                            // You might need more sophisticated parsing for SSE or other formats
-                            completionContent += text;
-                            stream.markdown(text); // Stream directly to VS Code chat
-                        });
-
-                        response.data.on('end', () => {
-                            resolve({ data: { completion: completionContent }, status: 200 } as AxiosResponse);
-                        });
-
-                        response.data.on('error', (err: any) => {
-                            reject(err);
-                        });
-                    })
-                    .catch(reject);
-            });
-        } else {
-            // Handle non-streaming response
-            return this.client.post('/generate', payload);
-        }
-    }
-
-    private parseQwenResponse(response: AxiosResponse, responseTime: number, stream?: vscode.ChatResponseStream): LLMResponse {
-        // If streaming, the content is already sent to the stream
-        const completion = stream ? '' : response.data.completion || response.data.choices?.[0]?.message?.content || '';
-
-        return {
-            success: true,
-            content: completion,
-            usage: {
-                promptTokens: response.data.usage?.prompt_tokens || 0,
-                completionTokens: response.data.usage?.completion_tokens || 0,
-                totalTokens: response.data.usage?.total_tokens || 0,
-            },
-            metadata: {
-                model: this.config.model,
-                responseTime: responseTime,
-            },
-            completion: completion // Add completion for non-streaming case
-        };
-    }
-
-    private prepareQwenPayload(request: LLMRequest): any {
-        // This is a simplified payload. Adjust according to your Qwen API's requirements.
-        return {
-            model: this.config.model,
-            prompt: request.prompt,
-            max_tokens: request.maxTokens || 1024,
-            temperature: request.temperature || 0.7,
-            stream: request.stream || false,
-        };
-    }
-
-    private getErrorMessage(error: any): string {
-        if (axios.isAxiosError(error)) {
-            return error.response?.data?.message || error.message;
-        } else if (error instanceof Error) {
-            return error.message;
-        }
-        return 'An unknown error occurred.';
-    }
-
-    private checkRateLimit(): boolean {
-        const now = Date.now();
-        // Filter out requests older than 1 minute
-        this.requestTimestamps = this.requestTimestamps.filter(timestamp => now - timestamp < 60 * 1000);
-        if (this.requestTimestamps.length >= this.MAX_REQUESTS_PER_MINUTE) {
-            return false;
-        }
-        this.requestTimestamps.push(now);
-        return true;
     }
 
     updateConfig(newConfig: Partial<QwenConfig>): void {
@@ -263,7 +205,15 @@ export class QwenLLMProvider {
     /**
      * Makes the actual HTTP request with retries
      */
-    private async makeRequest(payload: any, retryCount: number = 0): Promise<AxiosResponse> {
+    private async makeRequest(payload: any, stream: boolean): Promise<AxiosResponse | vscode.ChatResponseStream> {
+        if (stream) {
+            return this.makeStreamingRequest(payload);
+        } else {
+            return this.makeNonStreamingRequest(payload);
+        }
+    }
+
+    private async makeNonStreamingRequest(payload: any, retryCount: number = 0): Promise<AxiosResponse> {
         try {
             const response = await this.client.post('/v1/chat/completions', payload);
             this.requestCount++;
@@ -273,50 +223,76 @@ export class QwenLLMProvider {
             if (retryCount < this.config.retries && this.isRetryableError(error)) {
                 const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
                 await this.sleep(delay);
-                return this.makeRequest(payload, retryCount + 1);
+                return this.makeNonStreamingRequest(payload, retryCount + 1);
             }
             throw error;
+        }
+    }
+
+    private async makeStreamingRequest(payload: any, retryCount: number = 0): Promise<vscode.ChatResponseStream> {
+        const stream = new vscode.ChatResponseStream();
+        try {
+            const response = await this.client.post('/v1/chat/completions', payload, {
+                responseType: 'stream',
+                onDownloadProgress: (progressEvent) => {
+                    const data = progressEvent.event.currentTarget.responseText;
+                    // Process streaming data here and write to 'stream'
+                    // This part needs careful implementation based on Qwen's streaming format
+                    // For now, a placeholder:
+                    stream.write(data);
+                }
+            });
+            this.requestCount++;
+            this.requestTimestamps.push(Date.now());
+            return stream;
+        } catch (error) {
+            if (retryCount < this.config.retries && this.isRetryableError(error)) {
+                const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+                await this.sleep(delay);
+                return this.makeStreamingRequest(payload, retryCount + 1);
+            }
+            stream.reportError(this.getErrorMessage(error));
+            throw error;
+        }
+    }
+
+    private parseQwenResponse(response: AxiosResponse | vscode.ChatResponseStream, responseTime: number, stream?: vscode.ChatResponseStream): LLMResponse {
+        if (stream) {
+            // For streaming, the content is already written to the stream
+            return {
+                success: true,
+                completion: 'Streaming response handled by ChatResponseStream',
+                metadata: {
+                    model: this.config.model,
+                    responseTime: responseTime
+                }
+            };
+        } else {
+            const axiosResponse = response as AxiosResponse;
+            const completion = axiosResponse.data.choices[0].message.content;
+            const usage = axiosResponse.data.usage;
+
+            return {
+                success: true,
+                content: completion,
+                completion: completion,
+                usage: {
+                    promptTokens: usage.prompt_tokens,
+                    completionTokens: usage.completion_tokens,
+                    totalTokens: usage.total_tokens
+                },
+                metadata: {
+                    model: this.config.model,
+                    responseTime: responseTime
+                }
+            };
         }
     }
     
     /**
      * Parses Qwen API response
      */
-    private parseQwenResponse(response: AxiosResponse, responseTime: number): LLMResponse {
-        try {
-            const data = response.data;
-            
-            if (!data.choices || data.choices.length === 0) {
-                return {
-                    success: false,
-                    error: 'No response choices returned from Qwen API'
-                };
-            }
-            
-            const choice = data.choices[0];
-            const content = choice.message?.content || choice.text || '';
-            
-            return {
-                success: true,
-                content: content.trim(),
-                usage: {
-                    promptTokens: data.usage?.prompt_tokens || 0,
-                    completionTokens: data.usage?.completion_tokens || 0,
-                    totalTokens: data.usage?.total_tokens || 0
-                },
-                metadata: {
-                    model: data.model || this.config.model,
-                    responseTime,
-                    reasoning: choice.finish_reason
-                }
-            };
-        } catch (error) {
-            return {
-                success: false,
-                error: `Failed to parse Qwen response: ${error instanceof Error ? error.message : String(error)}`
-            };
-        }
-    }
+
     
     /**
      * Builds system prompts for different agents
@@ -457,7 +433,10 @@ Please provide:
     /**
      * Helper methods
      */
-    private summarizeContext(context: ContextData): string {
+    private summarizeContext(context?: ContextData): string {
+        if (!context) {
+            return 'No specific context provided.';
+        }
         const summary = [];
         
         if (context.currentFile) {

@@ -21,7 +21,7 @@ export class BugHunterAgent implements IAgent {
         private contextAnalyzer: ContextAnalyzer
     ) {}
     
-    async execute(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    async execute(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const startTime = Date.now();
         this.status.isExecuting = true;
         this.status.currentTask = 'Analyzing bugs';
@@ -228,8 +228,7 @@ export class BugHunterAgent implements IAgent {
             prompt,
             context,
             agentType: this.type,
-            maxTokens: 1536,
-            temperature: 0.2
+            stream
         });
         
         if (!llmResponse.success) {
@@ -246,8 +245,7 @@ export class BugHunterAgent implements IAgent {
             prompt,
             context,
             agentType: this.type,
-            maxTokens: 1536,
-            temperature: 0.3
+            stream
         });
         
         if (!llmResponse.success) {
@@ -264,8 +262,7 @@ export class BugHunterAgent implements IAgent {
             prompt,
             context,
             agentType: this.type,
-            maxTokens: 1536,
-            temperature: 0.2
+            stream
         });
         
         if (!llmResponse.success) {
@@ -282,8 +279,7 @@ export class BugHunterAgent implements IAgent {
             prompt,
             context,
             agentType: this.type,
-            maxTokens: 1536,
-            temperature: 0.2
+            stream
         });
         
         if (!llmResponse.success) {
@@ -300,8 +296,7 @@ export class BugHunterAgent implements IAgent {
             prompt,
             context,
             agentType: this.type,
-            maxTokens: 1536,
-            temperature: 0.2
+            stream
         });
         
         if (!llmResponse.success) {
@@ -318,8 +313,7 @@ export class BugHunterAgent implements IAgent {
             prompt,
             context,
             agentType: this.type,
-            maxTokens: 1024,
-            temperature: 0.1
+            stream
         });
         
         if (!llmResponse.success) {
@@ -336,8 +330,7 @@ export class BugHunterAgent implements IAgent {
             prompt,
             context,
             agentType: this.type,
-            maxTokens: 1536,
-            temperature: 0.3
+            stream
         });
         
         if (!llmResponse.success) {
@@ -354,8 +347,9 @@ export class BugHunterAgent implements IAgent {
             prompt,
             context,
             agentType: this.type,
-            maxTokens: 1536,
-            temperature: 0.2
+            maxTokens: 2048,
+            temperature: 0.3,
+            stream: stream
         });
         
         if (!llmResponse.success) {
@@ -372,8 +366,7 @@ export class BugHunterAgent implements IAgent {
             prompt,
             context,
             agentType: this.type,
-            maxTokens: 1536,
-            temperature: 0.3
+            stream
         });
         
         if (!llmResponse.success) {

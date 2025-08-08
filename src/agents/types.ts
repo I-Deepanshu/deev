@@ -161,48 +161,20 @@ export interface Alternative {
     implementation?: string;
 }
 
+
 /**
- * Base agent interface
+ * Interface for all agents in DevMind
  */
 export interface IAgent {
-    /**
-     * Agent type identifier
-     */
     readonly type: AgentType;
-    
-    /**
-     * Agent display name
-     */
     readonly name: string;
-    
-    /**
-     * Agent description
-     */
     readonly description: string;
-    
-    /**
-     * Execute the agent with given context
-     */
-    execute(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult>;
-    
-    /**
-     * Get agent capabilities
-     */
+    activate?(): Promise<void>;
+    deactivate?(): Promise<void>;
+    execute(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult>;
     getCapabilities(): AgentCapability[];
-    
-    /**
-     * Validate if agent can handle the given context
-     */
-    validateContext?(context: ContextData, capabilityType: AgentCapabilityType): { valid: boolean; reason?: string };
-    
-    /**
-     * Update agent configuration
-     */
     updateConfiguration?(config: vscode.WorkspaceConfiguration): Promise<void>;
-    
-    /**
-     * Get agent status
-     */
+    validateContext?(context: ContextData, capabilityType: AgentCapabilityType): { valid: boolean; reason?: string };
     getStatus?(): AgentStatus;
 }
 

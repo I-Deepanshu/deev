@@ -21,7 +21,7 @@ export class CodeSmithAgent implements IAgent {
         private contextAnalyzer: ContextAnalyzer
     ) {}
     
-    async execute(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    async execute(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const startTime = Date.now();
         this.status.isExecuting = true;
         this.status.currentTask = 'Generating code';
@@ -199,11 +199,12 @@ export class CodeSmithAgent implements IAgent {
     private async generateFunction(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
         const prompt = this.buildFunctionGenerationPrompt(context);
         
-        const llmResponse = await this.llmProvider.generateCode(
+        const llmResponse = await this.llmProvider.generateResponse({
             prompt,
             context,
-            context.language || 'typescript'
-        );
+            agentType: this.type,
+            stream
+        });
         
         if (!llmResponse.success) {
             throw new Error(llmResponse.error);
@@ -215,11 +216,12 @@ export class CodeSmithAgent implements IAgent {
     private async generateClass(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
         const prompt = this.buildClassGenerationPrompt(context);
         
-        const llmResponse = await this.llmProvider.generateCode(
+        const llmResponse = await this.llmProvider.generateResponse({
             prompt,
             context,
-            context.language || 'typescript'
-        );
+            agentType: this.type,
+            stream
+        });
         
         if (!llmResponse.success) {
             throw new Error(llmResponse.error);
@@ -231,11 +233,12 @@ export class CodeSmithAgent implements IAgent {
     private async generateTests(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
         const prompt = this.buildTestGenerationPrompt(context);
         
-        const llmResponse = await this.llmProvider.generateCode(
+        const llmResponse = await this.llmProvider.generateResponse({
             prompt,
             context,
-            context.language || 'typescript'
-        );
+            agentType: this.type,
+            stream
+        });
         
         if (!llmResponse.success) {
             throw new Error(llmResponse.error);
@@ -247,11 +250,12 @@ export class CodeSmithAgent implements IAgent {
     private async completeCode(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
         const prompt = this.buildCodeCompletionPrompt(context);
         
-        const llmResponse = await this.llmProvider.generateCode(
+        const llmResponse = await this.llmProvider.generateResponse({
             prompt,
             context,
-            context.language || 'typescript'
-        );
+            agentType: this.type,
+            stream
+        });
         
         if (!llmResponse.success) {
             throw new Error(llmResponse.error);
@@ -263,11 +267,12 @@ export class CodeSmithAgent implements IAgent {
     private async optimizeCode(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
         const prompt = this.buildOptimizationPrompt(context);
         
-        const llmResponse = await this.llmProvider.generateCode(
+        const llmResponse = await this.llmProvider.generateResponse({
             prompt,
             context,
-            context.language || 'typescript'
-        );
+            agentType: this.type,
+            stream
+        });
         
         if (!llmResponse.success) {
             throw new Error(llmResponse.error);
@@ -279,11 +284,12 @@ export class CodeSmithAgent implements IAgent {
     private async refactorCode(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
         const prompt = this.buildRefactoringPrompt(context);
         
-        const llmResponse = await this.llmProvider.generateCode(
+        const llmResponse = await this.llmProvider.generateResponse({
             prompt,
             context,
-            context.language || 'typescript'
-        );
+            agentType: this.type,
+            stream
+        });
         
         if (!llmResponse.success) {
             throw new Error(llmResponse.error);
@@ -295,11 +301,12 @@ export class CodeSmithAgent implements IAgent {
     private async generateBoilerplate(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
         const prompt = this.buildBoilerplatePrompt(context);
         
-        const llmResponse = await this.llmProvider.generateCode(
+        const llmResponse = await this.llmProvider.generateResponse({
             prompt,
             context,
-            context.language || 'typescript'
-        );
+            agentType: this.type,
+            stream
+        });
         
         if (!llmResponse.success) {
             throw new Error(llmResponse.error);

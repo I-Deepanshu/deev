@@ -20,8 +20,8 @@ export class ArchitectAgent implements IAgent {
         private llmProvider: QwenLLMProvider,
         private contextAnalyzer: ContextAnalyzer
     ) {}
-    
-    async execute(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+
+    async execute(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const startTime = Date.now();
         this.status.isExecuting = true;
         this.status.currentTask = 'Analyzing architecture';
@@ -169,7 +169,8 @@ export class ArchitectAgent implements IAgent {
             context,
             agentType: this.type,
             maxTokens: 2048,
-            temperature: 0.3
+            temperature: 0.3,
+            stream: stream
         });
         
         if (!llmResponse.success) {
@@ -187,7 +188,8 @@ export class ArchitectAgent implements IAgent {
             context,
             agentType: this.type,
             maxTokens: 1536,
-            temperature: 0.2
+            temperature: 0.2,
+            stream: stream
         });
         
         if (!llmResponse.success) {

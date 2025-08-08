@@ -7,7 +7,8 @@ import { PrivacyManager } from './core/PrivacyManager';
 import { AuditTrail } from './core/AuditTrail';
 import { PrivacyMode } from './core/PrivacyManager';
 import { DevMindViewProvider } from './views/DevMindViewProvider';
-import { AgentType, ContextData } from './agents/types';
+import { AgentType } from './agents/types';
+import { ContextData } from './core/ContextAnalyzer';
 
 let devMindManager: DevMindManager;
 
@@ -108,7 +109,7 @@ export function activate(context: vscode.ExtensionContext) {
             if (request.prompt.startsWith('/gitmate')) {
                 stream.markdown('Generating commit message...');
                 const result = await devMindManager.runAgent(
-                    AgentType.GitMate,
+                    'gitmate',
                     { git: { diff: request.prompt.substring('/gitmate '.length).trim() } },
                     stream // Pass the stream to the agent for direct output
                 );

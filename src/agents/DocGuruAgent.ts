@@ -1,12 +1,15 @@
 import * as vscode from 'vscode';
 import { QwenLLMProvider } from '../llm/QwenLLMProvider';
 import { ContextData } from '../core/ContextAnalyzer';
-import { AgentResult, AgentCapability, AgentCapabilityType, CodeChange, AnalysisResult, Alternative } from './types';
+import { AgentResult, AgentCapability, AgentCapabilityType, CodeChange, AnalysisResult, Alternative, IAgent, AgentType } from './types';
 
-export class DocGuruAgent {
+export class DocGuruAgent implements IAgent {
+    readonly type: AgentType = 'docguru';
+    readonly name: string = 'DocGuru';
+    readonly description: string = 'Generates documentation and explains code.';
     constructor(private llmProvider: QwenLLMProvider) {}
 
-    public getCapabilities(): AgentCapability[] {
+    getCapabilities(): AgentCapability[] {
         return [
             {
                 type: 'documentation',
@@ -29,10 +32,10 @@ export class DocGuruAgent {
         ];
     }
 
-    public async generateDocumentation(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async generateDocumentation(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         try {
             const prompt = this.createDocumentationPrompt(context);
-            const llmResponse = await this.llmProvider.generateCode(prompt, context, context.language!);
+            const llmResponse = await this.llmProvider.sendRequest(prompt, stream);
 
             if (llmResponse.success && llmResponse.content) {
                 return {
@@ -65,10 +68,10 @@ export class DocGuruAgent {
         }
     }
 
-    public async explainCode(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async explainCode(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         try {
             const prompt = this.createExplanationPrompt(context);
-            const llmResponse = await this.llmProvider.generateCode(prompt, context, context.language!);
+            const llmResponse = await this.llmProvider.sendRequest(prompt, stream);
 
             if (llmResponse.success && llmResponse.content) {
                 return {
@@ -161,5 +164,20 @@ Consider the following question/request: ${context.problemStatement}
         prompt += `
 Provide a clear and concise explanation, suitable for a developer who might be unfamiliar with this specific code.`;
         return prompt;
+    }
+
+    async execute(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
+        if (context.command === 'doc.generate') {
+            return this.generateDocumentation(context, cancellationToken, stream);
+        } else if (context.command === 'doc.explain') {
+            return this.explainCode(context, cancellationToken, stream);
+        } else {
+            return {
+                success: false,
+                agentType: this.type,
+                executionTime: 0,
+                error: 'Unsupported command for DocGuruAgent'
+            };
+        }
     }
 }
