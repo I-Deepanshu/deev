@@ -4,19 +4,24 @@ import { AgentOrchestrator } from "../agents/AgentOrchestrator";
 import { PrivacyManager, PrivacyMode } from "./PrivacyManager";
 import { AuditTrail } from "./AuditTrail";
 import { AgentType } from "../agents/types";
+import { ErrorLogger } from "./ErrorLogger";
 
 export class DevMindManager {
   private contextCache: Map<string, ContextData> = new Map();
   private lastAnalysisTime = 0;
   private readonly ANALYSIS_THROTTLE_MS = 200; // Performance target <200ms
   private webview: vscode.Webview | undefined;
+  private errorLogger: ErrorLogger;
 
   constructor(
     private contextAnalyzer: ContextAnalyzer,
     private agentOrchestrator: AgentOrchestrator,
     private privacyManager: PrivacyManager,
     private auditTrail: AuditTrail,
-  ) {}
+    private extensionContext: vscode.ExtensionContext,
+  ) {
+    this.errorLogger = new ErrorLogger(this.extensionContext);
+  }
 
   public setWebview(webview: vscode.Webview) {
     this.webview = webview;
@@ -110,7 +115,10 @@ export class DevMindManager {
     stream?: vscode.ChatResponseStream,
   ): Promise<void> {
     try {
-      const currentContext = context || (await this.getCurrentContext());
+      let currentContext = await this.getCurrentContext();
+    if (context) {
+      currentContext = { ...currentContext, ...context };
+    }
 
       // Privacy check
       if (!this.privacyManager.canProcessContext(currentContext)) {
@@ -411,9 +419,11 @@ export class DevMindManager {
   /**
    * Handles errors with user-friendly messages
    */
-  private handleError(message: string, error: any): void {
+  private handleError(message: string, error: any) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    vscode.window.showErrorMessage(`${message}: ${errorMessage}`);
     console.error(message, error);
-    vscode.window.showErrorMessage(`${message}: ${error.message || error}`);
+    this.errorLogger.logError(message, { error: errorMessage, stack: error.stack });
   }
 
   /**

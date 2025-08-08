@@ -37,11 +37,12 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   devMindManager = new DevMindManager(
-    contextAnalyzer,
-    agentOrchestrator,
-    privacyManager,
-    auditTrail,
-  );
+      contextAnalyzer,
+      agentOrchestrator,
+      privacyManager,
+      auditTrail,
+      context,
+    );
 
   // Register view providers
   const viewProvider = new DevMindViewProvider(
@@ -97,7 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
     }),
 
     vscode.commands.registerCommand("devmind.devflow", async () => {
-      await devMindManager.runAgent("devflow");
+      await devMindManager.runAgent("devflow", { command: "devflow.automate" });
     }),
 
     vscode.commands.registerCommand("devmind.codeReview", async () => {
