@@ -177,7 +177,16 @@
           "when": "true"
         }
       ]
-    }
+    },
+    "chatParticipants": [
+      {
+        "id": "devmind.chat",
+        "name": "devmind",
+        "fullName": "DevMind AI",
+        "description": "Your AI Pair Programmer",
+        "isSticky": true
+      }
+    ]
   },
   "scripts": {
     "clean": "rimraf out",

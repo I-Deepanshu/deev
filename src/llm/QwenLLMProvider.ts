@@ -2,11 +2,13 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { PrivacyManager } from '../core/PrivacyManager';
 import { ContextData } from '../core/ContextAnalyzer';
 import { AgentType } from '../agents/types';
+import * as vscode from 'vscode';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
 export interface LLMRequest {
     prompt: string;
-    context: ContextData;
-    agentType: string;
+    context?: ContextData; // Make context optional as it might not always be needed for simple requests
+    agentType?: string; // Make agentType optional
     maxTokens?: number;
     temperature?: number;
     stream?: boolean;
@@ -26,6 +28,7 @@ export interface LLMResponse {
         responseTime: number;
         reasoning?: string;
     };
+    completion?: string;
 }
 
 export interface QwenConfig {
@@ -72,7 +75,11 @@ export class QwenLLMProvider {
     /**
      * Sends a request to Qwen 3 LLM
      */
-    async generateResponse(request: LLMRequest): Promise<LLMResponse> {
+    async sendRequest(prompt: string, stream?: vscode.ChatResponseStream): Promise<LLMResponse> {
+        // For now, we'll use a simplified request for chat streaming
+        // In a real scenario, you'd construct a more detailed LLMRequest
+        const request: LLMRequest = { prompt, stream: !!stream };
+
         try {
             // Privacy check
             if (!this.privacyManager.canProcessRequest(request)) {
@@ -96,11 +103,11 @@ export class QwenLLMProvider {
             const payload = this.prepareQwenPayload(request);
             
             // Make the API call
-            const response = await this.makeRequest(payload);
+            const response = await this.makeRequest(payload, stream);
             
             const responseTime = Date.now() - startTime;
             
-            return this.parseQwenResponse(response, responseTime);
+            return this.parseQwenResponse(response, responseTime, stream);
             
         } catch (error) {
             console.error('Qwen LLM request failed:', error);
@@ -110,85 +117,92 @@ export class QwenLLMProvider {
             };
         }
     }
-    
-    /**
-     * Generates code with specific instructions
-     */
-    async generateCode(
-        instruction: string,
-        context: ContextData,
-        language: string = 'typescript'
-    ): Promise<LLMResponse> {
-        const prompt = this.buildCodeGenerationPrompt(instruction, context, language);
-        
-        return this.generateResponse({
-            prompt,
-            context,
-            agentType: 'codesmith',
-            maxTokens: 2048,
-            temperature: 0.2 // Lower temperature for more deterministic code
-        });
+
+    // Helper methods for building prompts and parsing responses would go here
+    // For now, we'll keep it simple for streaming.
+
+    private async makeRequest(payload: any, stream?: vscode.ChatResponseStream): Promise<AxiosResponse> {
+        if (stream) {
+            // Handle streaming response
+            return new Promise((resolve, reject) => {
+                this.client.post('/generate', payload, { responseType: 'stream' })
+                    .then(response => {
+                        let completionContent = '';
+                        response.data.on('data', (chunk: Buffer) => {
+                            const text = chunk.toString();
+                            // Assuming the LLM sends plain text or simple JSON chunks
+                            // You might need more sophisticated parsing for SSE or other formats
+                            completionContent += text;
+                            stream.markdown(text); // Stream directly to VS Code chat
+                        });
+
+                        response.data.on('end', () => {
+                            resolve({ data: { completion: completionContent }, status: 200 } as AxiosResponse);
+                        });
+
+                        response.data.on('error', (err: any) => {
+                            reject(err);
+                        });
+                    })
+                    .catch(reject);
+            });
+        } else {
+            // Handle non-streaming response
+            return this.client.post('/generate', payload);
+        }
     }
-    
-    /**
-     * Analyzes code for bugs and issues
-     */
-    async analyzeCode(
-        code: string,
-        context: ContextData,
-        analysisType: 'bugs' | 'performance' | 'security' | 'quality' = 'bugs'
-    ): Promise<LLMResponse> {
-        const prompt = this.buildCodeAnalysisPrompt(code, context, analysisType);
-        
-        return this.generateResponse({
-            prompt,
-            context,
-            agentType: 'bughunter',
-            maxTokens: 1024,
-            temperature: 0.1 // Very low temperature for analysis
-        });
+
+    private parseQwenResponse(response: AxiosResponse, responseTime: number, stream?: vscode.ChatResponseStream): LLMResponse {
+        // If streaming, the content is already sent to the stream
+        const completion = stream ? '' : response.data.completion || response.data.choices?.[0]?.message?.content || '';
+
+        return {
+            success: true,
+            content: completion,
+            usage: {
+                promptTokens: response.data.usage?.prompt_tokens || 0,
+                completionTokens: response.data.usage?.completion_tokens || 0,
+                totalTokens: response.data.usage?.total_tokens || 0,
+            },
+            metadata: {
+                model: this.config.model,
+                responseTime: responseTime,
+            },
+            completion: completion // Add completion for non-streaming case
+        };
     }
-    
-    /**
-     * Generates documentation
-     */
-    async generateDocumentation(
-        code: string,
-        context: ContextData,
-        docType: 'function' | 'class' | 'api' | 'readme' = 'function'
-    ): Promise<LLMResponse> {
-        const prompt = this.buildDocumentationPrompt(code, context, docType);
-        
-        return this.generateResponse({
-            prompt,
-            context,
-            agentType: 'docguru',
-            maxTokens: 1024,
-            temperature: 0.3
-        });
+
+    private prepareQwenPayload(request: LLMRequest): any {
+        // This is a simplified payload. Adjust according to your Qwen API's requirements.
+        return {
+            model: this.config.model,
+            prompt: request.prompt,
+            max_tokens: request.maxTokens || 1024,
+            temperature: request.temperature || 0.7,
+            stream: request.stream || false,
+        };
     }
-    
-    /**
-     * Suggests architectural improvements
-     */
-    async suggestArchitecture(
-        context: ContextData,
-        requirements: string
-    ): Promise<LLMResponse> {
-        const prompt = this.buildArchitecturePrompt(context, requirements);
-        
-        return this.generateResponse({
-            prompt,
-            context,
-            agentType: 'architect',
-            maxTokens: 2048,
-            temperature: 0.4
-        });
+
+    private getErrorMessage(error: any): string {
+        if (axios.isAxiosError(error)) {
+            return error.response?.data?.message || error.message;
+        } else if (error instanceof Error) {
+            return error.message;
+        }
+        return 'An unknown error occurred.';
     }
-    
-    /**
-     * Updates configuration
-     */
+
+    private checkRateLimit(): boolean {
+        const now = Date.now();
+        // Filter out requests older than 1 minute
+        this.requestTimestamps = this.requestTimestamps.filter(timestamp => now - timestamp < 60 * 1000);
+        if (this.requestTimestamps.length >= this.MAX_REQUESTS_PER_MINUTE) {
+            return false;
+        }
+        this.requestTimestamps.push(now);
+        return true;
+    }
+
     updateConfig(newConfig: Partial<QwenConfig>): void {
         this.config = { ...this.config, ...newConfig };
         

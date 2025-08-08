@@ -18,6 +18,8 @@ export class DevMindManager {
         private auditTrail: AuditTrail
     ) {}
 
+
+
     public setWebview(webview: vscode.Webview) {
         this.webview = webview;
     }
@@ -80,7 +82,7 @@ export class DevMindManager {
     /**
      * Runs a specific agent with current context
      */
-    async runAgent(agentType: AgentType, context?: ContextData): Promise<void> {
+    async runAgent(agentType: AgentType, context?: ContextData, stream?: vscode.ChatResponseStream): Promise<void> {
         try {
             const currentContext = context || await this.getCurrentContext();
             
@@ -101,7 +103,8 @@ export class DevMindManager {
                 const result = await this.agentOrchestrator.executeAgent(
                     agentType,
                     currentContext,
-                    token
+                    token,
+                    stream
                 );
                 
                 progress.report({ increment: 50, message: 'Generating response...' });

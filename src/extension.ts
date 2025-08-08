@@ -7,6 +7,7 @@ import { PrivacyManager } from './core/PrivacyManager';
 import { AuditTrail } from './core/AuditTrail';
 import { PrivacyMode } from './core/PrivacyManager';
 import { DevMindViewProvider } from './views/DevMindViewProvider';
+import { AgentType, ContextData } from './agents/types';
 
 let devMindManager: DevMindManager;
 
@@ -45,6 +46,13 @@ export function activate(context: vscode.ExtensionContext) {
     
     // Register commands
     const commands = [
+        vscode.commands.registerCommand('devmind.chat', async (prompt: string) => {
+            // This command can be triggered by the chat participant
+            // and will route the prompt to the appropriate agent.
+            // For now, we'll just log it.
+            console.log(`Chat command received: ${prompt}`);
+            // You can add more sophisticated routing here based on the prompt
+        }),
         vscode.commands.registerCommand('devmind.activateAgent', async () => {
             await devMindManager.activateContextualAgent();
         }),
@@ -87,6 +95,31 @@ export function activate(context: vscode.ExtensionContext) {
     ];
     
     context.subscriptions.push(...commands);
+
+    // Register the chat participant
+    context.subscriptions.push(
+        vscode.chat.createChatParticipant('devmind.chat', async (request, chatContext, stream, token) => {
+            // This is where you'll integrate with your AgentOrchestrator
+            // You can parse the request.prompt and route it to the appropriate agent
+            // For example, you might have a command like /gitmate to trigger GitMateAgent
+            // Or use natural language processing to determine the intent.
+
+            // Example: Simple routing based on a command
+            if (request.prompt.startsWith('/gitmate')) {
+                stream.markdown('Generating commit message...');
+                const result = await devMindManager.runAgent(
+                    AgentType.GitMate,
+                    { git: { diff: request.prompt.substring('/gitmate '.length).trim() } },
+                    stream // Pass the stream to the agent for direct output
+                );
+                // The agent should write directly to the stream, so no need to handle result here unless for error handling
+            } else {
+                stream.markdown('Hello! How can I help you today? Try @devmind /gitmate to generate a commit message.');
+            }
+
+            return {}; // Return an empty object or a more detailed ChatResult
+        })
+    );
     
     // Setup event listeners
     setupEventListeners(context);

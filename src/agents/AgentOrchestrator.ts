@@ -21,6 +21,11 @@ export class AgentOrchestrator {
         private auditTrail: AuditTrail
     ) {
         this.initializeAgents();
+        this.activateAgents();
+    }
+
+    public async dispose(): Promise<void> {
+        await this.deactivateAgents();
     }
     
     /**
@@ -29,7 +34,8 @@ export class AgentOrchestrator {
     async executeAgent(
         agentType: AgentType,
         context: ContextData,
-        cancellationToken?: vscode.CancellationToken
+        cancellationToken?: vscode.CancellationToken,
+        stream?: vscode.ChatResponseStream
     ): Promise<AgentResult> {
         const startTime = Date.now();
         this.activeAgent = agentType;
@@ -63,7 +69,7 @@ export class AgentOrchestrator {
             }
             
             // Execute the agent
-            const result = await agent.execute(context, cancellationToken);
+            const result = await agent.execute(context, cancellationToken, stream);
             
             // Record execution
             const execution: AgentExecution = {
@@ -369,6 +375,22 @@ export class AgentOrchestrator {
     /**
      * Initializes all agents
      */
+    private async activateAgents(): Promise<void> {
+        for (const [agentType, agent] of this.agents.entries()) {
+            if (agent.activate) {
+                await agent.activate();
+            }
+        }
+    }
+
+    private async deactivateAgents(): Promise<void> {
+        for (const [agentType, agent] of this.agents.entries()) {
+            if (agent.deactivate) {
+                await agent.deactivate();
+            }
+        }
+    }
+
     private initializeAgents(): void {
         this.agents.set('architect', new ArchitectAgent(this.llmProvider, this.contextAnalyzer));
         this.agents.set('codesmith', new CodeSmithAgent(this.llmProvider, this.contextAnalyzer));
