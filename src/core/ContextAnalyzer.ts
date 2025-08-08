@@ -50,6 +50,8 @@ export interface ContextData {
     language?: string;
     projectName?: string;
     problemStatement?: string;
+    command?: string;
+    args?: Record<string, any>;
 }
 
 export interface ProjectStructure {
