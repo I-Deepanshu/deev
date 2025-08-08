@@ -161,17 +161,10 @@ export class ArchitectAgent implements IAgent {
         return 'general';
     }
     
-    private async analyzeProjectStructure(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async analyzeProjectStructure(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildProjectStructurePrompt(context);
         
-        const llmResponse = await this.llmProvider.generateResponse({
-            prompt,
-            context,
-            agentType: this.type,
-            maxTokens: 2048,
-            temperature: 0.3,
-            stream: stream
-        });
+        const llmResponse = await this.llmProvider.generateResponse({ prompt, stream });
         
         if (!llmResponse.success) {
             throw new Error(llmResponse.error);
@@ -180,7 +173,7 @@ export class ArchitectAgent implements IAgent {
         return this.parseArchitecturalResponse(llmResponse.content!, 'project_structure', context);
     }
     
-    private async analyzeDesignPatterns(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async analyzeDesignPatterns(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildDesignPatternsPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
@@ -199,15 +192,16 @@ export class ArchitectAgent implements IAgent {
         return this.parseArchitecturalResponse(llmResponse.content!, 'design_patterns', context);
     }
     
-    private async analyzeScalability(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async analyzeScalability(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildScalabilityPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
             prompt,
             context,
             agentType: this.type,
-            maxTokens: 2048,
-            temperature: 0.4
+            maxTokens: 1536,
+            temperature: 0.2,
+            stream: stream
         });
         
         if (!llmResponse.success) {
@@ -217,7 +211,7 @@ export class ArchitectAgent implements IAgent {
         return this.parseArchitecturalResponse(llmResponse.content!, 'scalability', context);
     }
     
-    private async analyzeTechnologyStack(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async analyzeTechnologyStack(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildTechnologyStackPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
@@ -225,7 +219,8 @@ export class ArchitectAgent implements IAgent {
             context,
             agentType: this.type,
             maxTokens: 1536,
-            temperature: 0.3
+            temperature: 0.2,
+            stream: stream
         });
         
         if (!llmResponse.success) {
@@ -235,7 +230,7 @@ export class ArchitectAgent implements IAgent {
         return this.parseArchitecturalResponse(llmResponse.content!, 'technology_stack', context);
     }
     
-    private async performArchitectureReview(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async performArchitectureReview(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildArchitectureReviewPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
@@ -243,7 +238,8 @@ export class ArchitectAgent implements IAgent {
             context,
             agentType: this.type,
             maxTokens: 2048,
-            temperature: 0.3
+            temperature: 0.5,
+            stream: stream
         });
         
         if (!llmResponse.success) {
@@ -253,15 +249,16 @@ export class ArchitectAgent implements IAgent {
         return this.parseArchitecturalResponse(llmResponse.content!, 'architecture_review', context);
     }
     
-    private async performGeneralArchitecturalAnalysis(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async performGeneralArchitecturalAnalysis(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildGeneralArchitecturalPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
             prompt,
             context,
             agentType: this.type,
-            maxTokens: 1536,
-            temperature: 0.3
+            maxTokens: 2048,
+            temperature: 0.5,
+            stream: stream
         });
         
         if (!llmResponse.success) {

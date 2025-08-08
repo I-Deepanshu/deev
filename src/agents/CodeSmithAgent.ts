@@ -196,15 +196,10 @@ export class CodeSmithAgent implements IAgent {
         return 'general';
     }
     
-    private async generateFunction(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async generateFunction(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildFunctionGenerationPrompt(context);
         
-        const llmResponse = await this.llmProvider.generateResponse({
-            prompt,
-            context,
-            agentType: this.type,
-            stream
-        });
+        const llmResponse = await this.llmProvider.generateResponse({ prompt, stream });
         
         if (!llmResponse.success) {
             throw new Error(llmResponse.error);
@@ -213,7 +208,7 @@ export class CodeSmithAgent implements IAgent {
         return this.parseCodeGenerationResponse(llmResponse.content!, 'function', context);
     }
     
-    private async generateClass(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async generateClass(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildClassGenerationPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
@@ -230,7 +225,7 @@ export class CodeSmithAgent implements IAgent {
         return this.parseCodeGenerationResponse(llmResponse.content!, 'class', context);
     }
     
-    private async generateTests(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async generateTests(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildTestGenerationPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
@@ -247,14 +242,16 @@ export class CodeSmithAgent implements IAgent {
         return this.parseCodeGenerationResponse(llmResponse.content!, 'test', context);
     }
     
-    private async completeCode(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async completeCode(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildCodeCompletionPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
             prompt,
             context,
             agentType: this.type,
-            stream
+            maxTokens: 512,
+            temperature: 0.1,
+            stream: stream
         });
         
         if (!llmResponse.success) {
@@ -264,7 +261,7 @@ export class CodeSmithAgent implements IAgent {
         return this.parseCodeGenerationResponse(llmResponse.content!, 'completion', context);
     }
     
-    private async optimizeCode(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async optimizeCode(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildOptimizationPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
@@ -281,7 +278,7 @@ export class CodeSmithAgent implements IAgent {
         return this.parseCodeGenerationResponse(llmResponse.content!, 'optimization', context);
     }
     
-    private async refactorCode(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async refactorCode(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildRefactoringPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
@@ -298,14 +295,16 @@ export class CodeSmithAgent implements IAgent {
         return this.parseCodeGenerationResponse(llmResponse.content!, 'refactoring', context);
     }
     
-    private async generateBoilerplate(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async generateBoilerplate(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildBoilerplatePrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
             prompt,
             context,
             agentType: this.type,
-            stream
+            maxTokens: 2048,
+            temperature: 0.5,
+            stream: stream
         });
         
         if (!llmResponse.success) {
@@ -756,8 +755,22 @@ Provide contextually appropriate code generation.`
             (this.status.averageExecutionTime * (totalExecutions - 1) + executionTime) / totalExecutions;
     }
 
-    private async performGeneralCodeGeneration(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
-        // Placeholder for general code generation logic
-        return { success: false, agentType: this.type, message: 'General code generation not yet implemented.', executionTime: 0 };
+    private async performGeneralCodeGeneration(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
+        const prompt = this.buildGeneralCodePrompt(context);
+        
+        const llmResponse = await this.llmProvider.generateResponse({
+            prompt,
+            context,
+            agentType: this.type,
+            maxTokens: 2048,
+            temperature: 0.3,
+            stream: stream
+        });
+        
+        if (!llmResponse.success) {
+            throw new Error(llmResponse.error);
+        }
+        
+        return this.parseCodeGenerationResponse(llmResponse.content!, 'general', context);
     }
 }

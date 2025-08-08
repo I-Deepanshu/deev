@@ -9,7 +9,7 @@
     "url": "https://github.com/devmind-ai/devmind.git"
   },
   "engines": {
-    "vscode": "^1.74.0"
+    "vscode": "^1.84.0"
   },
   "categories": [
     "Other",

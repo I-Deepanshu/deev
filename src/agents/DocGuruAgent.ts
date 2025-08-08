@@ -35,7 +35,7 @@ export class DocGuruAgent implements IAgent {
     private async generateDocumentation(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         try {
             const prompt = this.createDocumentationPrompt(context);
-            const llmResponse = await this.llmProvider.sendRequest(prompt, stream);
+            const llmResponse = await this.llmProvider.generateResponse({ prompt, stream });
 
             if (llmResponse.success && llmResponse.content) {
                 return {
@@ -71,7 +71,7 @@ export class DocGuruAgent implements IAgent {
     private async explainCode(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         try {
             const prompt = this.createExplanationPrompt(context);
-            const llmResponse = await this.llmProvider.sendRequest(prompt, stream);
+            const llmResponse = await this.llmProvider.generateResponse({ prompt, stream });
 
             if (llmResponse.success && llmResponse.content) {
                 return {

@@ -166,7 +166,7 @@ export class GitMateAgent implements IAgent {
         if (stream) {
             stream.markdown('Calling LLM for commit message...');
         }
-        const response = await this.llmProvider.sendRequest(prompt, stream);
+        const response = await this.llmProvider.generateResponse({ prompt, stream });
         return response.content || '';
     }
 

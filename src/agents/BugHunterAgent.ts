@@ -221,15 +221,10 @@ export class BugHunterAgent implements IAgent {
         return 'logic_error';
     }
     
-    private async analyzeRuntimeError(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async analyzeRuntimeError(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildRuntimeErrorPrompt(context);
         
-        const llmResponse = await this.llmProvider.generateResponse({
-            prompt,
-            context,
-            agentType: this.type,
-            stream
-        });
+        const llmResponse = await this.llmProvider.generateResponse({ prompt, stream });
         
         if (!llmResponse.success) {
             throw new Error(llmResponse.error);
@@ -238,7 +233,7 @@ export class BugHunterAgent implements IAgent {
         return this.parseDebuggingResponse(llmResponse.content!, 'runtime_error', context);
     }
     
-    private async analyzeLogicError(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async analyzeLogicError(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildLogicErrorPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
@@ -255,7 +250,7 @@ export class BugHunterAgent implements IAgent {
         return this.parseDebuggingResponse(llmResponse.content!, 'logic_error', context);
     }
     
-    private async analyzePerformanceIssue(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async analyzePerformanceIssue(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildPerformancePrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
@@ -272,14 +267,14 @@ export class BugHunterAgent implements IAgent {
         return this.parseDebuggingResponse(llmResponse.content!, 'performance_issue', context);
     }
     
-    private async analyzeMemoryLeak(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async analyzeMemoryLeak(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildMemoryLeakPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
             prompt,
             context,
             agentType: this.type,
-            stream
+            stream: stream
         });
         
         if (!llmResponse.success) {
@@ -289,7 +284,7 @@ export class BugHunterAgent implements IAgent {
         return this.parseDebuggingResponse(llmResponse.content!, 'memory_leak', context);
     }
     
-    private async analyzeAsyncIssue(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async analyzeAsyncIssue(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildAsyncIssuePrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
@@ -306,14 +301,16 @@ export class BugHunterAgent implements IAgent {
         return this.parseDebuggingResponse(llmResponse.content!, 'async_issue', context);
     }
     
-    private async analyzeTypeError(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async analyzeTypeError(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildTypeErrorPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
             prompt,
             context,
             agentType: this.type,
-            stream
+            maxTokens: 1536,
+            temperature: 0.2,
+            stream: stream
         });
         
         if (!llmResponse.success) {
@@ -323,7 +320,7 @@ export class BugHunterAgent implements IAgent {
         return this.parseDebuggingResponse(llmResponse.content!, 'type_error', context);
     }
     
-    private async analyzeIntegrationIssue(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async analyzeIntegrationIssue(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildIntegrationIssuePrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
@@ -340,7 +337,7 @@ export class BugHunterAgent implements IAgent {
         return this.parseDebuggingResponse(llmResponse.content!, 'integration_issue', context);
     }
     
-    private async analyzeSecurityVulnerability(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async analyzeSecurityVulnerability(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildSecurityPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
@@ -359,14 +356,16 @@ export class BugHunterAgent implements IAgent {
         return this.parseDebuggingResponse(llmResponse.content!, 'security_vulnerability', context);
     }
     
-    private async performGeneralDebugging(context: ContextData, cancellationToken?: vscode.CancellationToken): Promise<AgentResult> {
+    private async performGeneralDebugging(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         const prompt = this.buildGeneralDebuggingPrompt(context);
         
         const llmResponse = await this.llmProvider.generateResponse({
             prompt,
             context,
             agentType: this.type,
-            stream
+            maxTokens: 2048,
+            temperature: 0.5,
+            stream: stream
         });
         
         if (!llmResponse.success) {

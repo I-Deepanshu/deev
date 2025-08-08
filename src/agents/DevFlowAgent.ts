@@ -44,7 +44,7 @@ export class DevFlowAgent implements IAgent {
     private async automateWorkflow(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         try {
             const prompt = this.createWorkflowAutomationPrompt(context);
-            const llmResponse = await this.llmProvider.sendRequest(prompt, stream);
+            const llmResponse = await this.llmProvider.generateResponse({ prompt, stream });
 
             if (llmResponse.success && llmResponse.content) {
                 return {
@@ -74,7 +74,7 @@ export class DevFlowAgent implements IAgent {
     private async generateScript(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
         try {
             const prompt = this.createScriptGenerationPrompt(context);
-            const llmResponse = await this.llmProvider.sendRequest(prompt, stream);
+            const llmResponse = await this.llmProvider.generateResponse({ prompt, stream });
 
             if (llmResponse.success && llmResponse.content) {
                 return {

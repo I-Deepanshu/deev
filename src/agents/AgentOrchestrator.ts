@@ -120,7 +120,8 @@ export class AgentOrchestrator {
     async executeAgentChain(
         agentChain: AgentType[],
         context: ContextData,
-        cancellationToken?: vscode.CancellationToken
+        cancellationToken?: vscode.CancellationToken,
+        stream?: vscode.ChatResponseStream
     ): Promise<AgentResult[]> {
         const results: AgentResult[] = [];
         let currentContext = { ...context };
@@ -130,7 +131,7 @@ export class AgentOrchestrator {
                 break;
             }
             
-            const result = await this.executeAgent(agentType, currentContext, cancellationToken);
+            const result = await this.executeAgent(agentType, currentContext, cancellationToken, stream);
             results.push(result);
             
             // Update context with previous agent's output
@@ -258,12 +259,12 @@ export class AgentOrchestrator {
             reasoning += 'Uncommitted changes detected. ';
         }
         
-        if ((context.gitHistory?.uncommittedChanges.length || 0) > 5) {
+        if (((context.gitHistory?.uncommittedChanges?.length || 0) > 5)) {
             confidence += 0.3;
             reasoning += 'Many uncommitted files suggest need for git management. ';
         }
         
-        if ((context.gitHistory?.recentCommits.length || 0) === 0) {
+        if (((context.gitHistory?.recentCommits?.length || 0) === 0)) {
             confidence += 0.2;
             reasoning += 'No recent commits, may need git workflow setup. ';
         }

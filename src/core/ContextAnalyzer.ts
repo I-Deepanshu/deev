@@ -52,6 +52,7 @@ export interface ContextData {
     problemStatement?: string;
     command?: string;
     args?: Record<string, any>;
+    git?: GitContext;
 }
 
 export interface ProjectStructure {
@@ -75,10 +76,14 @@ export interface ConfigFile {
 }
 
 export interface GitContext {
-    currentBranch: string;
-    recentCommits: CommitInfo[];
-    uncommittedChanges: string[];
+    currentBranch?: string;
+    recentCommits?: CommitInfo[];
+    uncommittedChanges?: string[];
     remoteUrl?: string;
+    diff?: string;
+    status?: string;
+    branch?: string;
+    log?: string;
 }
 
 export interface FileChange {

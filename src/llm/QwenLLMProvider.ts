@@ -9,7 +9,7 @@ export interface LLMRequest {
     agentType?: string; // Make agentType optional
     maxTokens?: number;
     temperature?: number;
-    stream?: boolean;
+    stream?: vscode.ChatResponseStream;
 }
 
 export interface LLMResponse {
@@ -27,6 +27,7 @@ export interface LLMResponse {
         reasoning?: string;
     };
     completion?: string;
+    stream?: vscode.ChatResponseStream;
 }
 
 export interface QwenConfig {
@@ -73,10 +74,7 @@ export class QwenLLMProvider {
     /**
      * Sends a request to Qwen 3 LLM
      */
-    async sendRequest(prompt: string, stream?: vscode.ChatResponseStream): Promise<LLMResponse> {
-        // For now, we'll use a simplified request for chat streaming
-        // In a real scenario, you'd construct a more detailed LLMRequest
-        const request: LLMRequest = { prompt, stream: !!stream };
+    async generateResponse(request: LLMRequest): Promise<LLMResponse> {
 
         try {
             // Privacy check
@@ -96,16 +94,16 @@ export class QwenLLMProvider {
             }
             
             const startTime = Date.now();
-            
+
             // Prepare the request payload for Qwen 3
             const payload = this.prepareQwenPayload(request);
             
             // Make the API call
-            const response = await this.makeRequest(payload, !!stream);
+            const response = await this.makeRequest(payload, request.stream);
             
             const responseTime = Date.now() - startTime;
             
-            if (stream) {
+            if (request.stream) {
                 // For streaming, the content is already written to the stream
                 return {
                     success: true,
@@ -113,7 +111,8 @@ export class QwenLLMProvider {
                     metadata: {
                         model: this.config.model,
                         responseTime: responseTime
-                    }
+                    },
+                    stream: request.stream
                 };
             } else {
                 const axiosResponse = response as AxiosResponse;
@@ -195,7 +194,7 @@ export class QwenLLMProvider {
             ],
             max_tokens: request.maxTokens || 1024,
             temperature: request.temperature || 0.3,
-            stream: request.stream || false,
+            stream: !!request.stream,
             top_p: 0.9,
             frequency_penalty: 0.1,
             presence_penalty: 0.1
@@ -205,9 +204,10 @@ export class QwenLLMProvider {
     /**
      * Makes the actual HTTP request with retries
      */
-    private async makeRequest(payload: any, stream: boolean): Promise<AxiosResponse | vscode.ChatResponseStream> {
+    private async makeRequest(payload: any, stream: vscode.ChatResponseStream | undefined): Promise<AxiosResponse | vscode.ChatResponseStream | void> {
         if (stream) {
-            return this.makeStreamingRequest(payload);
+            await this.makeStreamingRequest(payload, stream);
+            return;
         } else {
             return this.makeNonStreamingRequest(payload);
         }
@@ -229,29 +229,42 @@ export class QwenLLMProvider {
         }
     }
 
-    private async makeStreamingRequest(payload: any, retryCount: number = 0): Promise<vscode.ChatResponseStream> {
-        const stream = new vscode.ChatResponseStream();
+    private async makeStreamingRequest(payload: any, stream: vscode.ChatResponseStream, retryCount: number = 0): Promise<void> {
         try {
             const response = await this.client.post('/v1/chat/completions', payload, {
                 responseType: 'stream',
                 onDownloadProgress: (progressEvent) => {
                     const data = progressEvent.event.currentTarget.responseText;
-                    // Process streaming data here and write to 'stream'
-                    // This part needs careful implementation based on Qwen's streaming format
-                    // For now, a placeholder:
-                    stream.write(data);
+                    // Qwen API returns data in SSE format, e.g., data: { ... }
+                    // We need to parse each line
+                    data.split('\n').forEach((line: string) => {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const json = JSON.parse(line.substring(6));
+                                if (json.choices && json.choices.length > 0) {
+                                    const delta = json.choices[0].delta;
+                                    if (delta && delta.content) {
+                                        stream.markdown(delta.content);
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('Error parsing SSE data:', e);
+                            }
+                        }
+                    });
                 }
             });
             this.requestCount++;
             this.requestTimestamps.push(Date.now());
-            return stream;
+            return;
         } catch (error) {
             if (retryCount < this.config.retries && this.isRetryableError(error)) {
                 const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
                 await this.sleep(delay);
-                return this.makeStreamingRequest(payload, retryCount + 1);
+                return this.makeStreamingRequest(payload, stream, retryCount + 1);
             }
-            stream.reportError(this.getErrorMessage(error));
+            // For streaming, errors are typically handled by the stream's consumer or by throwing
+            // an error that the caller can catch. `reportError` is not a standard method.
             throw error;
         }
     }

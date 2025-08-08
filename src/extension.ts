@@ -110,7 +110,7 @@ export function activate(context: vscode.ExtensionContext) {
                 stream.markdown('Generating commit message...');
                 const result = await devMindManager.runAgent(
                     'gitmate',
-                    { git: { diff: request.prompt.substring('/gitmate '.length).trim() } },
+                    { git: { diff: request.prompt.substring('/gitmate '.length).trim(), status: '', branch: '', log: '' } },
                     stream // Pass the stream to the agent for direct output
                 );
                 // The agent should write directly to the stream, so no need to handle result here unless for error handling
