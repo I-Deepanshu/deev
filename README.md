@@ -4,7 +4,7 @@
 
 ## Overview
 
-DevMind is a context-aware AI pair programming assistant for VS Code. Unlike traditional AI coding assistants, DevMind understands your codebase at multiple levels of context, from the immediate code you're working on to the broader project architecture.
+DevMind is a context-aware AI pair programming assistant for VS Code. Unlike traditional AI coding assistants, DevMind understands your codebase at multiple levels of context, from the immediate code you're working on to the broader project architecture. Currently in Demo
 
 Powered by Qwen 3 LLM, DevMind offers specialized AI agents for different development tasks, each with deep contextual understanding of your code.
 
