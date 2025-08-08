@@ -211,6 +211,7 @@ export class ContextAnalyzer {
         ? undefined
         : document.getText(editor.selection),
       selectionRange: editor.selection.isEmpty ? undefined : editor.selection,
+      language: document.languageId,
     };
   }
 

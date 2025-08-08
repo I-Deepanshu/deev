@@ -176,6 +176,7 @@ export class DevMindManager {
     context.selectedText = text;
     context.selectionRange = selection;
 
+    context.command = "bug.review";
     await this.runAgent("bughunter", context);
   }
 
@@ -210,6 +211,7 @@ export class DevMindManager {
     const context = await this.getCurrentContext();
     context.includeProjectStructure = true;
     context.includeGitHistory = true;
+    context.command = "doc.generate";
 
     await this.runAgent("docguru", context);
   }
