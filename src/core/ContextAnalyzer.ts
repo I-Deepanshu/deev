@@ -371,6 +371,7 @@ export class ContextAnalyzer {
    */
   private async getProjectStructure(): Promise<ProjectStructure> {
     if (!this.projectRoot) {
+      console.warn("Project root is not defined. Cannot analyze project structure.");
       return {
         directories: [],
         files: [],

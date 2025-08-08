@@ -90,8 +90,8 @@ export function activate(context: vscode.ExtensionContext) {
     }),
 
     vscode.commands.registerCommand("devmind.docguru", async () => {
-      await devMindManager.runAgent("docguru");
-    }),
+            await devMindManager.runAgent("docguru", { command: "doc.generate" });
+        }),
 
     vscode.commands.registerCommand("devmind.gitmate", async () => {
       await devMindManager.runAgent("gitmate");
