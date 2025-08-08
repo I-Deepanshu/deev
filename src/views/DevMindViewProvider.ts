@@ -1,103 +1,103 @@
-import * as vscode from 'vscode';
-import { DevMindManager } from '../core/DevMindManager';
+import * as vscode from "vscode";
+import { DevMindManager } from "../core/DevMindManager";
 
 /**
  * DevMindViewProvider class for managing the extension's webview panels
  * Provides views for agents, context analysis, and audit history
  */
 export class DevMindViewProvider {
-    private chatView: ChatViewProvider;
-    private contextView: ContextViewProvider;
-    private historyView: HistoryViewProvider;
-    
-    /**
-     * Creates a new DevMindViewProvider instance
-     * @param extensionUri The extension's URI
-     * @param devMindManager The DevMindManager instance
-     */
-    constructor(
-        private extensionUri: vscode.Uri,
-        private devMindManager: DevMindManager
-    ) {
-        this.chatView = new ChatViewProvider(extensionUri, devMindManager);
-        this.contextView = new ContextViewProvider(extensionUri, devMindManager);
-        this.historyView = new HistoryViewProvider(extensionUri, devMindManager);
-    }
-    
-    /**
-     * Gets the agents view provider
-     * @returns The agents view provider
-     */
-    getChatView(): vscode.WebviewViewProvider {
-        return this.chatView;
-    }
-    
-    /**
-     * Gets the context view provider
-     * @returns The context view provider
-     */
-    getContextView(): vscode.WebviewViewProvider {
-        return this.contextView;
-    }
-    
-    /**
-     * Gets the history view provider
-     * @returns The history view provider
-     */
-    getHistoryView(): vscode.WebviewViewProvider {
-        return this.historyView;
-    }
+  private chatView: ChatViewProvider;
+  private contextView: ContextViewProvider;
+  private historyView: HistoryViewProvider;
+
+  /**
+   * Creates a new DevMindViewProvider instance
+   * @param extensionUri The extension's URI
+   * @param devMindManager The DevMindManager instance
+   */
+  constructor(
+    private extensionUri: vscode.Uri,
+    private devMindManager: DevMindManager,
+  ) {
+    this.chatView = new ChatViewProvider(extensionUri, devMindManager);
+    this.contextView = new ContextViewProvider(extensionUri, devMindManager);
+    this.historyView = new HistoryViewProvider(extensionUri, devMindManager);
+  }
+
+  /**
+   * Gets the agents view provider
+   * @returns The agents view provider
+   */
+  getChatView(): vscode.WebviewViewProvider {
+    return this.chatView;
+  }
+
+  /**
+   * Gets the context view provider
+   * @returns The context view provider
+   */
+  getContextView(): vscode.WebviewViewProvider {
+    return this.contextView;
+  }
+
+  /**
+   * Gets the history view provider
+   * @returns The history view provider
+   */
+  getHistoryView(): vscode.WebviewViewProvider {
+    return this.historyView;
+  }
 }
 
 /**
  * ChatViewProvider class for displaying the chat interface
  */
 class ChatViewProvider implements vscode.WebviewViewProvider {
-    /**
-     * Creates a new AgentsViewProvider instance
-     * @param extensionUri The extension's URI
-     * @param devMindManager The DevMindManager instance
-     */
-    constructor(
-        private extensionUri: vscode.Uri,
-        private devMindManager: DevMindManager
-    ) {}
-    
-    /**
-     * Resolves the webview view
-     * @param webviewView The webview view to resolve
-     * @param context The webview view resolution context
-     * @param token A cancellation token
-     */
-    resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
-        token: vscode.CancellationToken
-    ): void | Thenable<void> {
-        webviewView.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [this.extensionUri]
-        };
-        
-        this.devMindManager.setWebview(webviewView.webview);
-        webviewView.webview.html = this.getChatViewHtml(webviewView.webview);
+  /**
+   * Creates a new AgentsViewProvider instance
+   * @param extensionUri The extension's URI
+   * @param devMindManager The DevMindManager instance
+   */
+  constructor(
+    private extensionUri: vscode.Uri,
+    private devMindManager: DevMindManager,
+  ) {}
 
-        webviewView.webview.onDidReceiveMessage(async (message) => {
-            switch (message.command) {
-                case 'sendMessage':
-                    await this.devMindManager.handleChatMessage(message.text);
-                    break;
-            }
-        });
-    }
+  /**
+   * Resolves the webview view
+   * @param webviewView The webview view to resolve
+   * @param context The webview view resolution context
+   * @param token A cancellation token
+   */
+  resolveWebviewView(
+    webviewView: vscode.WebviewView,
+    context: vscode.WebviewViewResolveContext,
+    token: vscode.CancellationToken,
+  ): void | Thenable<void> {
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this.extensionUri],
+    };
 
-    /**
-     * Gets the HTML for the chat view
-     * @param webview The webview to get HTML for
-     * @returns The HTML for the chat view
-     */
-    private getChatViewHtml(webview: vscode.Webview): string {
-        return `
+    this.devMindManager.setWebview(webviewView.webview);
+    webviewView.webview.html = this.getChatViewHtml(webviewView.webview);
+
+    webviewView.webview.onDidReceiveMessage(async (message) => {
+      switch (message.command) {
+        case "sendMessage":
+          await this.devMindManager.handleChatMessage(message.text);
+          break;
+      }
+    });
+  }
+
+  /**
+   * Gets the HTML for the chat view
+   * @param webview The webview to get HTML for
+   * @returns The HTML for the chat view
+   */
+  private getChatViewHtml(webview: vscode.Webview): string {
+    return `
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -208,9 +208,12 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
             </head>
             <body>
                 <div class="header">
-                    <img src="${webview.asWebviewUri(this.extensionUri.with({
-                        path: this.extensionUri.path + '/media/devmind-logo.svg'
-                    }))}" class="logo" alt="DevMind Logo">
+                    <img src="${webview.asWebviewUri(
+                      this.extensionUri.with({
+                        path:
+                          this.extensionUri.path + "/media/devmind-logo.svg",
+                      }),
+                    )}" class="logo" alt="DevMind Logo">
                     <div class="title">DevMind Chat</div>
                 </div>
                 <div class="chat-container">
@@ -272,75 +275,83 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
             </body>
             </html>
         `;
-    }
+  }
 }
 
 /**
  * ContextViewProvider class for displaying context analysis results
  */
 class ContextViewProvider implements vscode.WebviewViewProvider {
-    /**
-     * Creates a new ContextViewProvider instance
-     * @param extensionUri The extension's URI
-     * @param devMindManager The DevMindManager instance
-     */
-    constructor(
-        private extensionUri: vscode.Uri,
-        private devMindManager: DevMindManager
-    ) {}
-    
-    /**
-     * Resolves the webview view
-     * @param webviewView The webview view to resolve
-     * @param context The webview view resolution context
-     * @param token A cancellation token
-     */
-    resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
-        token: vscode.CancellationToken
-    ): void | Thenable<void> {
-        webviewView.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [this.extensionUri]
-        };
-        
-        webviewView.webview.html = this.getContextViewHtml(webviewView.webview);
-        
-        // Handle messages from the webview
-        webviewView.webview.onDidReceiveMessage(async (message) => {
-            switch (message.command) {
-                case 'refreshContext':
-                    webviewView.webview.html = this.getContextViewHtml(webviewView.webview);
-                    break;
-            }
-        });
-        
-        // Refresh view when active editor changes
-        const editorChangeDisposable = vscode.window.onDidChangeActiveTextEditor(() => {
-            if (webviewView.visible) {
-                webviewView.webview.html = this.getContextViewHtml(webviewView.webview);
-            }
-        });
-        
-        // Clear disposables when view is disposed
-        webviewView.onDidDispose(() => {
-            editorChangeDisposable.dispose();
-        });
-    }
-    
-    /**
-     * Gets the HTML for the context view
-     * @param webview The webview to get HTML for
-     * @returns The HTML for the context view
-     */
-    private getContextViewHtml(webview: vscode.Webview): string {
-        // In a real implementation, this would get context data from DevMindManager
-        const editor = vscode.window.activeTextEditor;
-        const fileName = editor ? editor.document.fileName.split(/[\\/]/).pop() : 'No file open';
-        const language = editor ? editor.document.languageId : 'unknown';
-        
-        return `
+  /**
+   * Creates a new ContextViewProvider instance
+   * @param extensionUri The extension's URI
+   * @param devMindManager The DevMindManager instance
+   */
+  constructor(
+    private extensionUri: vscode.Uri,
+    private devMindManager: DevMindManager,
+  ) {}
+
+  /**
+   * Resolves the webview view
+   * @param webviewView The webview view to resolve
+   * @param context The webview view resolution context
+   * @param token A cancellation token
+   */
+  resolveWebviewView(
+    webviewView: vscode.WebviewView,
+    context: vscode.WebviewViewResolveContext,
+    token: vscode.CancellationToken,
+  ): void | Thenable<void> {
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this.extensionUri],
+    };
+
+    webviewView.webview.html = this.getContextViewHtml(webviewView.webview);
+
+    // Handle messages from the webview
+    webviewView.webview.onDidReceiveMessage(async (message) => {
+      switch (message.command) {
+        case "refreshContext":
+          webviewView.webview.html = this.getContextViewHtml(
+            webviewView.webview,
+          );
+          break;
+      }
+    });
+
+    // Refresh view when active editor changes
+    const editorChangeDisposable = vscode.window.onDidChangeActiveTextEditor(
+      () => {
+        if (webviewView.visible) {
+          webviewView.webview.html = this.getContextViewHtml(
+            webviewView.webview,
+          );
+        }
+      },
+    );
+
+    // Clear disposables when view is disposed
+    webviewView.onDidDispose(() => {
+      editorChangeDisposable.dispose();
+    });
+  }
+
+  /**
+   * Gets the HTML for the context view
+   * @param webview The webview to get HTML for
+   * @returns The HTML for the context view
+   */
+  private getContextViewHtml(webview: vscode.Webview): string {
+    // In a real implementation, this would get context data from DevMindManager
+    const editor = vscode.window.activeTextEditor;
+    const fileName = editor
+      ? editor.document.fileName.split(/[\\/]/).pop()
+      : "No file open";
+    const language = editor ? editor.document.languageId : "unknown";
+
+    return `
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -404,9 +415,12 @@ class ContextViewProvider implements vscode.WebviewViewProvider {
             </head>
             <body>
                 <div class="header">
-                    <img src="${webview.asWebviewUri(this.extensionUri.with({
-                        path: this.extensionUri.path + '/media/devmind-logo.svg'
-                    }))}" class="logo" alt="DevMind Logo">
+                    <img src="${webview.asWebviewUri(
+                      this.extensionUri.with({
+                        path:
+                          this.extensionUri.path + "/media/devmind-logo.svg",
+                      }),
+                    )}" class="logo" alt="DevMind Logo">
                     <div class="title">Context Analysis</div>
                 </div>
                 
@@ -460,69 +474,88 @@ class ContextViewProvider implements vscode.WebviewViewProvider {
             </body>
             </html>
         `;
-    }
+  }
 }
 
 /**
  * HistoryViewProvider class for displaying audit trail history
  */
 class HistoryViewProvider implements vscode.WebviewViewProvider {
-    /**
-     * Creates a new HistoryViewProvider instance
-     * @param extensionUri The extension's URI
-     * @param devMindManager The DevMindManager instance
-     */
-    constructor(
-        private extensionUri: vscode.Uri,
-        private devMindManager: DevMindManager
-    ) {}
-    
-    /**
-     * Resolves the webview view
-     * @param webviewView The webview view to resolve
-     * @param context The webview view resolution context
-     * @param token A cancellation token
-     */
-    resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
-        token: vscode.CancellationToken
-    ): void | Thenable<void> {
-        webviewView.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [this.extensionUri]
-        };
-        
-        webviewView.webview.html = this.getHistoryViewHtml(webviewView.webview);
-        
-        // Handle messages from the webview
-        webviewView.webview.onDidReceiveMessage(async (message) => {
-            switch (message.command) {
-                case 'refreshHistory':
-                    webviewView.webview.html = this.getHistoryViewHtml(webviewView.webview);
-                    break;
-                case 'clearHistory':
-                    // In a real implementation, this would call a method on DevMindManager
-                    webviewView.webview.html = this.getHistoryViewHtml(webviewView.webview);
-                    break;
-            }
-        });
-    }
-    
-    /**
-     * Gets the HTML for the history view
-     * @param webview The webview to get HTML for
-     * @returns The HTML for the history view
-     */
-    private getHistoryViewHtml(webview: vscode.Webview): string {
-        // In a real implementation, this would get history data from DevMindManager
-        const historyEntries = [
-            { timestamp: new Date().toLocaleString(), agent: 'BugHunter', action: 'Analyzed runtime error', success: true },
-            { timestamp: new Date(Date.now() - 3600000).toLocaleString(), agent: 'CodeSmith', action: 'Generated utility function', success: true },
-            { timestamp: new Date(Date.now() - 7200000).toLocaleString(), agent: 'Architect', action: 'Reviewed project structure', success: true }
-        ];
-        
-        return `
+  /**
+   * Creates a new HistoryViewProvider instance
+   * @param extensionUri The extension's URI
+   * @param devMindManager The DevMindManager instance
+   */
+  constructor(
+    private extensionUri: vscode.Uri,
+    private devMindManager: DevMindManager,
+  ) {}
+
+  /**
+   * Resolves the webview view
+   * @param webviewView The webview view to resolve
+   * @param context The webview view resolution context
+   * @param token A cancellation token
+   */
+  resolveWebviewView(
+    webviewView: vscode.WebviewView,
+    context: vscode.WebviewViewResolveContext,
+    token: vscode.CancellationToken,
+  ): void | Thenable<void> {
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this.extensionUri],
+    };
+
+    webviewView.webview.html = this.getHistoryViewHtml(webviewView.webview);
+
+    // Handle messages from the webview
+    webviewView.webview.onDidReceiveMessage(async (message) => {
+      switch (message.command) {
+        case "refreshHistory":
+          webviewView.webview.html = this.getHistoryViewHtml(
+            webviewView.webview,
+          );
+          break;
+        case "clearHistory":
+          // In a real implementation, this would call a method on DevMindManager
+          webviewView.webview.html = this.getHistoryViewHtml(
+            webviewView.webview,
+          );
+          break;
+      }
+    });
+  }
+
+  /**
+   * Gets the HTML for the history view
+   * @param webview The webview to get HTML for
+   * @returns The HTML for the history view
+   */
+  private getHistoryViewHtml(webview: vscode.Webview): string {
+    // In a real implementation, this would get history data from DevMindManager
+    const historyEntries = [
+      {
+        timestamp: new Date().toLocaleString(),
+        agent: "BugHunter",
+        action: "Analyzed runtime error",
+        success: true,
+      },
+      {
+        timestamp: new Date(Date.now() - 3600000).toLocaleString(),
+        agent: "CodeSmith",
+        action: "Generated utility function",
+        success: true,
+      },
+      {
+        timestamp: new Date(Date.now() - 7200000).toLocaleString(),
+        agent: "Architect",
+        action: "Reviewed project structure",
+        success: true,
+      },
+    ];
+
+    return `
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -606,25 +639,32 @@ class HistoryViewProvider implements vscode.WebviewViewProvider {
             </head>
             <body>
                 <div class="header">
-                    <img src="${webview.asWebviewUri(this.extensionUri.with({
-                        path: this.extensionUri.path + '/media/devmind-logo.svg'
-                    }))}" class="logo" alt="DevMind Logo">
+                    <img src="${webview.asWebviewUri(
+                      this.extensionUri.with({
+                        path:
+                          this.extensionUri.path + "/media/devmind-logo.svg",
+                      }),
+                    )}" class="logo" alt="DevMind Logo">
                     <div class="title">Audit Trail</div>
                 </div>
                 
                 <div class="history-container">
-                    ${historyEntries.map(entry => `
+                    ${historyEntries
+                      .map(
+                        (entry) => `
                         <div class="history-entry">
                             <div class="history-header">
                                 <div class="history-agent">${entry.agent}</div>
                                 <div class="history-timestamp">${entry.timestamp}</div>
                             </div>
                             <div class="history-action">${entry.action}</div>
-                            <div class="${entry.success ? 'history-success' : 'history-failure'}">
-                                ${entry.success ? '✓ Success' : '✗ Failed'}
+                            <div class="${entry.success ? "history-success" : "history-failure"}">
+                                ${entry.success ? "✓ Success" : "✗ Failed"}
                             </div>
                         </div>
-                    `).join('')}
+                    `,
+                      )
+                      .join("")}
                 </div>
                 
                 <div class="button-container">
@@ -652,5 +692,5 @@ class HistoryViewProvider implements vscode.WebviewViewProvider {
             </body>
             </html>
         `;
-    }
+  }
 }

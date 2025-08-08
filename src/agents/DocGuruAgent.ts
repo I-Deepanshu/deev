@@ -1,130 +1,158 @@
-import * as vscode from 'vscode';
-import { QwenLLMProvider } from '../llm/QwenLLMProvider';
-import { ContextData } from '../core/ContextAnalyzer';
-import { AgentResult, AgentCapability, AgentCapabilityType, CodeChange, AnalysisResult, Alternative, IAgent, AgentType } from './types';
+import * as vscode from "vscode";
+import { QwenLLMProvider } from "../llm/QwenLLMProvider";
+import { ContextData } from "../core/ContextAnalyzer";
+import {
+  AgentResult,
+  AgentCapability,
+  AgentCapabilityType,
+  CodeChange,
+  AnalysisResult,
+  Alternative,
+  IAgent,
+  AgentType,
+} from "./types";
 
 export class DocGuruAgent implements IAgent {
-    readonly type: AgentType = 'docguru';
-    readonly name: string = 'DocGuru';
-    readonly description: string = 'Generates documentation and explains code.';
-    constructor(private llmProvider: QwenLLMProvider) {}
+  readonly type: AgentType = "docguru";
+  readonly name: string = "DocGuru";
+  readonly description: string = "Generates documentation and explains code.";
+  constructor(private llmProvider: QwenLLMProvider) {}
 
-    getCapabilities(): AgentCapability[] {
-        return [
+  getCapabilities(): AgentCapability[] {
+    return [
+      {
+        type: "documentation",
+        name: "Documentation Generation",
+        description: "Generates documentation for code.",
+        supportedLanguages: ["*"],
+        supportedFileTypes: ["*"],
+        requiresContext: ["surroundingCode", "selectedText", "filePath"],
+        outputTypes: ["documentation"],
+      },
+      {
+        type: "documentation",
+        name: "Code Explanation",
+        description: "Explains complex code snippets.",
+        supportedLanguages: ["*"],
+        supportedFileTypes: ["*"],
+        requiresContext: ["surroundingCode", "selectedText", "filePath"],
+        outputTypes: ["message"],
+      },
+    ];
+  }
+
+  private async generateDocumentation(
+    context: ContextData,
+    cancellationToken?: vscode.CancellationToken,
+    stream?: vscode.ChatResponseStream,
+  ): Promise<AgentResult> {
+    try {
+      const prompt = this.createDocumentationPrompt(context);
+      const llmResponse = await this.llmProvider.generateResponse({
+        prompt,
+        stream,
+      });
+
+      if (llmResponse.success && llmResponse.content) {
+        return {
+          success: true,
+          documentation: [
             {
-                type: 'documentation',
-                name: 'Documentation Generation',
-                description: 'Generates documentation for code.',
-                supportedLanguages: ['*'],
-                supportedFileTypes: ['*'],
-                requiresContext: ['surroundingCode', 'selectedText', 'filePath'],
-                outputTypes: ['documentation']
+              type: "module",
+              path: context.filePath || "unknown",
+              content: llmResponse.content,
+              format: "markdown",
             },
-            {
-                type: 'documentation',
-                name: 'Code Explanation',
-                description: 'Explains complex code snippets.',
-                supportedLanguages: ['*'],
-                supportedFileTypes: ['*'],
-                requiresContext: ['surroundingCode', 'selectedText', 'filePath'],
-                outputTypes: ['message']
-            }
-        ];
+          ],
+          agentType: "docguru",
+          executionTime: llmResponse.metadata?.responseTime || 0,
+        };
+      } else {
+        return {
+          success: false,
+          error: llmResponse.error || "Documentation generation failed",
+          agentType: "docguru",
+          executionTime: llmResponse.metadata?.responseTime || 0,
+        };
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error:
+          error.message ||
+          "An unexpected error occurred during documentation generation",
+        agentType: "docguru",
+        executionTime: 0,
+      };
     }
+  }
 
-    private async generateDocumentation(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
-        try {
-            const prompt = this.createDocumentationPrompt(context);
-            const llmResponse = await this.llmProvider.generateResponse({ prompt, stream });
+  private async explainCode(
+    context: ContextData,
+    cancellationToken?: vscode.CancellationToken,
+    stream?: vscode.ChatResponseStream,
+  ): Promise<AgentResult> {
+    try {
+      const prompt = this.createExplanationPrompt(context);
+      const llmResponse = await this.llmProvider.generateResponse({
+        prompt,
+        stream,
+      });
 
-            if (llmResponse.success && llmResponse.content) {
-                return {
-                    success: true,
-                    documentation: [{
-                        type: 'module',
-                        path: context.filePath || 'unknown',
-                        content: llmResponse.content,
-                        format: 'markdown'
-                    }],
-                    agentType: 'docguru',
-                    executionTime: llmResponse.metadata?.responseTime || 0,
-                };
-            } else {
-                return {
-                    success: false,
-                    error: llmResponse.error || 'Documentation generation failed',
-                    agentType: 'docguru',
-                    executionTime: llmResponse.metadata?.responseTime || 0,
-                };
-            }
-        } catch (error: any) {
-            return {
-                success: false,
-                error: error.message || 'An unexpected error occurred during documentation generation',
-                agentType: 'docguru',
-                executionTime: 0,
-
-            };
-        }
+      if (llmResponse.success && llmResponse.content) {
+        return {
+          success: true,
+          message: llmResponse.content,
+          agentType: "docguru",
+          executionTime: llmResponse.metadata?.responseTime || 0,
+        };
+      } else {
+        return {
+          success: false,
+          error: llmResponse.error || "Code explanation failed",
+          agentType: "docguru",
+          executionTime: llmResponse.metadata?.responseTime || 0,
+        };
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error:
+          error.message ||
+          "An unexpected error occurred during code explanation",
+        agentType: "docguru",
+        executionTime: 0,
+      };
     }
+  }
 
-    private async explainCode(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
-        try {
-            const prompt = this.createExplanationPrompt(context);
-            const llmResponse = await this.llmProvider.generateResponse({ prompt, stream });
-
-            if (llmResponse.success && llmResponse.content) {
-                return {
-                    success: true,
-                    message: llmResponse.content,
-                    agentType: 'docguru',
-                    executionTime: llmResponse.metadata?.responseTime || 0,
-                };
-            } else {
-                return {
-                    success: false,
-                    error: llmResponse.error || 'Code explanation failed',
-                    agentType: 'docguru',
-                    executionTime: llmResponse.metadata?.responseTime || 0,
-                };
-            }
-        } catch (error: any) {
-            return {
-                success: false,
-                error: error.message || 'An unexpected error occurred during code explanation',
-                agentType: 'docguru',
-                executionTime: 0,
-            };
-        }
-    }
-
-    private createDocumentationPrompt(context: ContextData): string {
-        let prompt = `Generate comprehensive documentation for the following ${context.language || 'code'}:
+  private createDocumentationPrompt(context: ContextData): string {
+    let prompt = `Generate comprehensive documentation for the following ${context.language || "code"}:
 
 `;
-        if (context.filePath) {
-            prompt += `File: ${context.filePath}
+    if (context.filePath) {
+      prompt += `File: ${context.filePath}
 `;
-        }
-        if (context.surroundingCode) {
-            prompt += `\`\`\`${context.language}
+    }
+    if (context.surroundingCode) {
+      prompt += `\`\`\`${context.language}
 ${context.surroundingCode}
 \`\`\`
 `;
-        }
-        if (context.selectedText) {
-            prompt += `Selected code:
+    }
+    if (context.selectedText) {
+      prompt += `Selected code:
 \`\`\`${context.language}
 ${context.selectedText}
 \`\`\`
 `;
-        }
-        if (context.problemStatement) {
-            prompt += `
+    }
+    if (context.problemStatement) {
+      prompt += `
 Consider the following problem/request: ${context.problemStatement}
 `;
-        }
-        prompt += `
+    }
+    prompt += `
 The documentation should include:
 - A brief overview of the code's purpose.
 - Detailed explanation of functions/classes, their parameters, and return values.
@@ -132,52 +160,56 @@ The documentation should include:
 - Any important considerations or dependencies.
 
 Provide the documentation in Markdown format.`;
-        return prompt;
+    return prompt;
+  }
+
+  private createExplanationPrompt(context: ContextData): string {
+    let prompt = `Explain the following ${context.language || "code"} in detail, focusing on its functionality, purpose, and any complex parts:
+
+`;
+    if (context.filePath) {
+      prompt += `File: ${context.filePath}
+`;
     }
-
-    private createExplanationPrompt(context: ContextData): string {
-        let prompt = `Explain the following ${context.language || 'code'} in detail, focusing on its functionality, purpose, and any complex parts:
-
-`;
-        if (context.filePath) {
-            prompt += `File: ${context.filePath}
-`;
-        }
-        if (context.surroundingCode) {
-            prompt += `\`\`\`${context.language}
+    if (context.surroundingCode) {
+      prompt += `\`\`\`${context.language}
 ${context.surroundingCode}
 \`\`\`
 `;
-        }
-        if (context.selectedText) {
-            prompt += `Selected code:
+    }
+    if (context.selectedText) {
+      prompt += `Selected code:
 \`\`\`${context.language}
 ${context.selectedText}
 \`\`\`
 `;
-        }
-        if (context.problemStatement) {
-            prompt += `
+    }
+    if (context.problemStatement) {
+      prompt += `
 Consider the following question/request: ${context.problemStatement}
 `;
-        }
-        prompt += `
+    }
+    prompt += `
 Provide a clear and concise explanation, suitable for a developer who might be unfamiliar with this specific code.`;
-        return prompt;
-    }
+    return prompt;
+  }
 
-    async execute(context: ContextData, cancellationToken?: vscode.CancellationToken, stream?: vscode.ChatResponseStream): Promise<AgentResult> {
-        if (context.command === 'doc.generate') {
-            return this.generateDocumentation(context, cancellationToken, stream);
-        } else if (context.command === 'doc.explain') {
-            return this.explainCode(context, cancellationToken, stream);
-        } else {
-            return {
-                success: false,
-                agentType: this.type,
-                executionTime: 0,
-                error: 'Unsupported command for DocGuruAgent'
-            };
-        }
+  async execute(
+    context: ContextData,
+    cancellationToken?: vscode.CancellationToken,
+    stream?: vscode.ChatResponseStream,
+  ): Promise<AgentResult> {
+    if (context.command === "doc.generate") {
+      return this.generateDocumentation(context, cancellationToken, stream);
+    } else if (context.command === "doc.explain") {
+      return this.explainCode(context, cancellationToken, stream);
+    } else {
+      return {
+        success: false,
+        agentType: this.type,
+        executionTime: 0,
+        error: "Unsupported command for DocGuruAgent",
+      };
     }
+  }
 }
